@@ -1,6 +1,7 @@
 import cors from 'cors';
 import express from 'express';
 
+const blockedMACs = new Map<string, number>();
 const app = express();
 app.use(cors({
     origin: '*',
@@ -20,23 +21,18 @@ app.use((req, res, next) => {
 app.post('/login', (req, res) => {
     const { accessKey } = req.body;
 
-    // Verifique a chave de acesso no banco de dados ou em algum armazenamento
-    // Se estiver correto, envie uma requisição para o MikroTik para liberar o acesso
-    // Por enquanto, vamos apenas retornar um sucesso aleatório
 
     res.json({ success: true });
 });
 
 app.post('/add-key', (req, res) => {
     const { accessKey } = req.body;
-    // Aqui você salva essa chave no banco de dados ou em uma estrutura temporária
     res.json({ success: true });
 });
 
 
 app.post('/remove-key', (req, res) => {
     const { accessKey } = req.body;
-    // Aqui você remove essa chave do banco de dados ou da estrutura temporária
     res.json({ success: true });
 });
 
@@ -55,17 +51,33 @@ app.post('/request-access', (req, res) => {
         return res.status(400).json({ error: 'Tempo inválido!' });
     }
 
-    // Aqui você gera uma chave aleatória e salva no banco de dados ou em uma estrutura temporária
     const accessKey = Math.random().toString(36).substr(2, 9);
-
-    // Aqui você gera um QR Code com a chave de acesso e retorna para o frontend
-    const qrCode = `9456${amount}000${accessKey}6304`;
+    const qrCode = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${accessKey}`;
     const pixKey = accessKey;
-
     res.json({ qrCode, accessKey: pixKey });
-    
-
 });
+
+app.post('/block-mac', (req, res) => {
+    const { mac } = req.body;
+    blockedMACs.set(mac, Date.now());
+    res.json({ success: true });
+});
+
+app.get('/is-mac-blocked', (req, res) => {
+    const mac = req.query.mac;
+    const blocked = blockedMACs.get(mac as string);
+    if (blocked) {
+        const currentTime = Date.now();
+        const sixHours = 6 * 60 * 60 * 1000;
+        if (currentTime - blocked < sixHours) {
+            return res.json({ blocked: true });
+        } else {
+            blockedMACs.delete(mac as string);
+        }
+    }
+    res.json({ blocked: false });
+});
+
 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
