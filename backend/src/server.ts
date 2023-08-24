@@ -10,6 +10,8 @@ app.use(cors({
 }));
 const PORT = 3001;
 
+let blockedMACAddresses: string[] = []; // Lista para armazenar MACs bloqueados
+
 app.use(express.json());
 
 app.use((req, res, next) => {
@@ -52,7 +54,7 @@ app.post('/request-access', (req, res) => {
     }
 
     const accessKey = Math.random().toString(36).substr(2, 9);
-    const qrCode = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${accessKey}`;
+    const qrCode = `https://fakeqrcode.com/img.php?text=${accessKey}&size=200`;
     const pixKey = accessKey;
     res.json({ qrCode, accessKey: pixKey });
 });
@@ -64,7 +66,8 @@ app.post('/block-mac', (req, res) => {
 });
 
 app.get('/is-mac-blocked', (req, res) => {
-    const mac = req.query.mac;
+    const mac = req.query.mac as string;
+    const isBlocked = blockedMACAddresses.includes(mac);
     const blocked = blockedMACs.get(mac as string);
     if (blocked) {
         const currentTime = Date.now();
@@ -75,7 +78,7 @@ app.get('/is-mac-blocked', (req, res) => {
             blockedMACs.delete(mac as string);
         }
     }
-    res.json({ blocked: false });
+    return res.json({ blocked: isBlocked });
 });
 
 

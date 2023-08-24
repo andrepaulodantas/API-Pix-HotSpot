@@ -144,7 +144,7 @@ function App() {
         </div>
         </div>
         
-        <div>
+        <div className="app-container">
                 <h1>Escolha o tempo de acesso:</h1>
                 <select value={selectedOption} onChange={handleOptionChange}>
                     <option value="">Selecione uma opção</option>
